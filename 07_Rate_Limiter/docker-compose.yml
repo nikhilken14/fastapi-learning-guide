@@ -1,0 +1,42 @@
+version: "3.8"
+
+# Two instances of the SAME app, both pointed at the SAME Redis, behind
+# nothing more than "call whichever port you like" here (in real life,
+# a load balancer would sit in front of them). This is what proves the
+# limit is genuinely distributed: hit instance A a few times, then
+# instance B - the limit is still shared, because the counter lives in
+# Redis, not in either instance's own memory.
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rate-limiter-a:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - REDIS_HOST=redis
+      - RATE_LIMIT_TOKENS=5
+      - RATE_LIMIT_WINDOW_SECONDS=10
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  rate-limiter-b:
+    build: .
+    ports:
+      - "8002:8000"
+    environment:
+      - REDIS_HOST=redis
+      - RATE_LIMIT_TOKENS=5
+      - RATE_LIMIT_WINDOW_SECONDS=10
+    depends_on:
+      redis:
+        condition: service_healthy

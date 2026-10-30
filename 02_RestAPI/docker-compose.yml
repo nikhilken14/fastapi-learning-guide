@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    container_name: restapi_demo
+    ports:
+      - "8030:8030"
+    environment:
+      APP_NAME: Product API
+      APP_VERSION: 1.0.0
+      ENVIRONMENT: docker
+      DEBUG: "false"
